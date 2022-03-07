@@ -2,13 +2,13 @@ import sys
 
 
 class Token:
-    def _init_(self, value, type):
+    def __init__(self, value, type):
         self.type = type
         self.value = value
 
 
 class Tokenizer:
-    def _init_(self, origin):
+    def __init__(self, origin):
         self.origin = origin
         self.position = 0
         self.actual = None
@@ -35,8 +35,8 @@ class Tokenizer:
             self.actual = Token('-', "MINUS")
             return self.actual
 
-        elif self.origin[self.position].isdigt():
-            candidato += self.origin[self.position]
+        elif self.origin[self.position].isdigit():
+            candidato = self.origin[self.position]
             self.position += 1
             isInt = True
             while isInt:
@@ -62,19 +62,19 @@ class Parser:
         Parser.tokens.selectNext()
         resultado = None
         if Parser.tokens.actual.type == "INT":
-            resultado = Parser.tokens.actual
+            resultado = Parser.tokens.actual.value
             Parser.tokens.selectNext()
             while Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS":
                 if Parser.tokens.actual.type == "PLUS":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "INT":
-                        resultado += Parser.tokens.actual
+                        resultado += Parser.tokens.actual.value
                     else:
                         raise ValueError
                 if Parser.tokens.actual.type == "MINUS":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "INT":
-                        resultado -= Parser.tokens.actual
+                        resultado -= Parser.tokens.actual.value
                     else:
                         raise ValueError
                 Parser.tokens.selectNext()
