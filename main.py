@@ -15,17 +15,15 @@ class Tokenizer:
 
     def selectNext(self):
         if self.position >= len(self.origin):
-            self.actual = Token(" ", "EOF")
+            self.actual = Token("-", "EOF")
             return self.actual
 
         if self.origin[self.position] == ' ':
-            print("entrei", self.origin[self.position])
             self.position += 1
             while self.origin[self.position] == ' ':
-                print("while", self.origin[self.position])
                 self.position += 1
-            # if self.origin[self.position].isdigit():
-            #     raise ValueError
+            if self.origin[self.position].isdigit():
+                sys.stderr.write("Invalid input")
 
         if self.origin[self.position] == '+':
             self.position += 1
