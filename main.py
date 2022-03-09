@@ -22,8 +22,8 @@ class Tokenizer:
             self.position += 1
             while self.origin[self.position] == ' ':
                 self.position += 1
-            if self.origin[self.position].isdigit():
-                raise ValueError
+            # if self.origin[self.position].isdigit():
+            #     raise ValueError
 
         if self.origin[self.position] == '+':
             self.position += 1
@@ -77,6 +77,8 @@ class Parser:
                         resultado -= Parser.tokens.actual.value
                     else:
                         raise ValueError
+                else:
+                    raise ValueError
                 Parser.tokens.selectNext()
             return resultado
         else:
