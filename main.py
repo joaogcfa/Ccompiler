@@ -102,6 +102,7 @@ class Parser:
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "INT":
                         resultado /= Parser.tokens.actual.value
+                        resultado = int(resultado)
                     else:
                         # print("2")
                         raise ValueError
