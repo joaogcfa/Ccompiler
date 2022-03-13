@@ -116,7 +116,7 @@ class Parser:
 
     def run(code):
         code_filtrado = PrePro.filter(code)
-        print(code_filtrado)
+        # print(code_filtrado)
         Parser.tokens = Tokenizer(code_filtrado)
         Parser.tokens.selectNext()
         return Parser.parseExpression()
