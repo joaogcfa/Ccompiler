@@ -115,15 +115,36 @@ class Parser:
             raise ValueError
 
     def run(code):
-        Parser.tokens = Tokenizer(code)
+        code_filtrado = PrePro.filter(code)
+        print(code_filtrado)
+        Parser.tokens = Tokenizer(code_filtrado)
         Parser.tokens.selectNext()
         return Parser.parseExpression()
 
 
-# class PrePro:
-#     def filter():
-#         return code
+class PrePro:
+    def filter(code):
+        i = 0
+        comentario = False
+        string = ""
+        size = len(code)
+        while i < size:
+            if comentario == True:
+                string += code[i]
+            if code[i] == '/':
+                string = code[i]
+                if code[i+1] == '*':
+                    comentario = True
+            if comentario == True and code[i] == '*' and code[i+1] == '/':
+                string += "/"
+                code = code.replace(string, "")
+                comentario = False
+                i = 0
+                size = len(code)
+            i += 1
+        return code
 
 
 arg = sys.argv[1]
 print(Parser.run(arg))
+# print(Parser.run("/* a */ 1 /* b */"))
