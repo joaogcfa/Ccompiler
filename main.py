@@ -15,7 +15,7 @@ class Tokenizer:
 
     def selectNext(self):
 
-        if self.origin[self.position] == ' ':
+        if self.position < len(self.origin) and self.origin[self.position] == ' ':
             self.position += 1
             while self.position < len(self.origin) and self.origin[self.position] == ' ':
                 self.position += 1
