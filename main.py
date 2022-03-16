@@ -1,3 +1,4 @@
+from select import select
 import sys
 
 
@@ -19,8 +20,6 @@ class Tokenizer:
             self.position += 1
             while self.position < len(self.origin) and self.origin[self.position] == ' ':
                 self.position += 1
-            # if self.origin[self.position].isdigit():
-            #     raise ValueError
 
         if self.position >= len(self.origin):
             self.actual = Token("", "EOF")
@@ -44,6 +43,16 @@ class Tokenizer:
         elif self.origin[self.position] == '/':
             self.position += 1
             self.actual = Token('/', "DIV")
+            return self.actual
+
+        elif self.origin[self.position] == '(':
+            self.position += 1
+            self.actual = Token('(', "OPEN_PAR")
+            return self.actual
+
+        elif self.origin[self.position] == ')':
+            self.position += 1
+            self.actual = Token(')', "CLOSE_PAR")
             return self.actual
 
         elif self.origin[self.position].isdigit():
@@ -70,13 +79,16 @@ class Parser:
     tokens = None
 
     def parseExpression():
+        # print("Expression")
         resultado = Parser.parseTerm()
 
         while Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS":
             if Parser.tokens.actual.type == "PLUS":
+                # print("Plus")
                 Parser.tokens.selectNext()
                 resultado += Parser.parseTerm()
             elif Parser.tokens.actual.type == "MINUS":
+                # print("Minus")
                 Parser.tokens.selectNext()
                 resultado -= Parser.parseTerm()
             else:
@@ -84,37 +96,55 @@ class Parser:
         return resultado
 
     def parseTerm():
+        # print("Term")
+        resultado = Parser.parseFactor()
 
+        while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
+            if Parser.tokens.actual.type == "MULT":
+                # print("Mult")
+                Parser.tokens.selectNext()
+                resultado *= Parser.parseFactor()
+            elif Parser.tokens.actual.type == "DIV":
+                # print("Div")
+                Parser.tokens.selectNext()
+                resultado //= Parser.parseFactor()
+                # resultado = int(resultado)
+            else:
+                raise ValueError
+        return resultado
+
+    def parseFactor():
+        # print("Factor")
         resultado = None
+
         if Parser.tokens.actual.type == "INT":
+            # print("INT")
             resultado = Parser.tokens.actual.value
+            # print(resultado)
             Parser.tokens.selectNext()
 
-            while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
-                if Parser.tokens.actual.type == "MULT":
-                    Parser.tokens.selectNext()
-                    if Parser.tokens.actual.type == "INT":
-                        resultado *= Parser.tokens.actual.value
-                        # print(resultado)
-                    else:
-                        # print("1")
-                        raise ValueError
-                elif Parser.tokens.actual.type == "DIV":
-                    Parser.tokens.selectNext()
-                    if Parser.tokens.actual.type == "INT":
-                        resultado /= Parser.tokens.actual.value
-                        resultado = int(resultado)
-                    else:
-                        # print("2")
-                        raise ValueError
-                else:
-                    # print("3")
-                    raise ValueError
+        elif Parser.tokens.actual.type == "PLUS":
+            # print("soma2")
+            Parser.tokens.selectNext()
+            resultado = Parser.parseFactor()
+        elif Parser.tokens.actual.type == "MINUS":
+            # print("sub2")
+            Parser.tokens.selectNext()
+            resultado = -Parser.parseFactor()
+
+        elif Parser.tokens.actual.type == "OPEN_PAR":
+            # print("par")
+            Parser.tokens.selectNext()
+            resultado = Parser.parseExpression()
+            if Parser.tokens.actual.type == "CLOSE_PAR":
+                # print("fechapar")
                 Parser.tokens.selectNext()
-            return resultado
+            else:
+                raise ValueError
         else:
-            # print("4")
             raise ValueError
+        # print("resultado: ", resultado)
+        return resultado
 
     def run(code):
         code_filtrado = PrePro.filter(code)
