@@ -237,5 +237,5 @@ class NoOp(Node):
 
 
 arg = sys.argv[1]
-print("RESPOTA: ", Parser.run(arg))
+print(Parser.run(arg))
 # print(Parser.run("/* a */ 1 /* b */"))
