@@ -80,73 +80,80 @@ class Parser:
 
     def parseExpression():
         print("Expression")
-        resultado = Parser.parseTerm()
+        Node = Parser.parseTerm()
 
         while Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS":
             if Parser.tokens.actual.type == "PLUS":
                 print("Plus")
                 Parser.tokens.selectNext()
-                resultado += Parser.parseTerm()
+                # resultado += Parser.parseTerm()
+                Node = BinOp("PLUS", [Node, Parser.parseTerm()])
             elif Parser.tokens.actual.type == "MINUS":
                 print("Minus")
                 Parser.tokens.selectNext()
-                resultado -= Parser.parseTerm()
+                # resultado -= Parser.parseTerm()
+                Node = BinOp("MINUS", [Node, Parser.parseTerm()])
             else:
                 raise ValueError
-        return resultado
+        return Node
 
     def parseTerm():
         print("Term")
-        resultado = Parser.parseFactor()
+        Node = Parser.parseFactor()
 
         while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
             if Parser.tokens.actual.type == "MULT":
                 print("Mult")
                 Parser.tokens.selectNext()
-                resultado *= Parser.parseFactor()
+                # resultado *= Parser.parseFactor()
+                Node = BinOp("MULT", [Node, Parser.parseFactor()])
             elif Parser.tokens.actual.type == "DIV":
                 print("Div")
                 Parser.tokens.selectNext()
-                resultado //= Parser.parseFactor()
-                # resultado = int(resultado)
+                # resultado //= Parser.parseFactor()
+                Node = BinOp("DIV", [Node, Parser.parseFactor()])
             else:
                 raise ValueError
-        return resultado
+        return Node
 
     def parseFactor():
         print("Factor")
-        resultado = None
+        Node = None
 
         if Parser.tokens.actual.type == "INT":
             print("INT")
-            resultado = Parser.tokens.actual.value
-            print(resultado)
+            # resultado = Parser.tokens.actual.value
+            print("tipo: ", type(Parser.tokens.actual.value))
+            Node = IntVal(Parser.tokens.actual.value, None)
             Parser.tokens.selectNext()
 
         elif Parser.tokens.actual.type == "PLUS":
-            print("soma2")
+            # print("soma2")
             Parser.tokens.selectNext()
-            resultado = Parser.parseFactor()
+            # resultado = Parser.parseFactor()
+            Node = UnOp("PLUS", [Parser.parseFactor()])
         elif Parser.tokens.actual.type == "MINUS":
-            print("sub2")
+            # print("sub2")
             Parser.tokens.selectNext()
-            resultado = -Parser.parseFactor()
+            # resultado = -Parser.parseFactor()
+            Node = UnOp("MINUS", [Parser.parseFactor()])
 
         elif Parser.tokens.actual.type == "OPEN_PAR":
-            print("par")
+            # print("par")
             Parser.tokens.selectNext()
-            resultado = Parser.parseExpression()
+            Node = Parser.parseExpression()
             if Parser.tokens.actual.type == "CLOSE_PAR":
-                print("fechapar")
+                # print("fechapar")
                 Parser.tokens.selectNext()
             else:
                 raise ValueError
         else:
             raise ValueError
-        print("resultado: ", resultado)
-        return resultado
+        print("resultado: ", Node)
+        return Node
 
     def run(code):
+        # file = open("input.c", "r")
         code_filtrado = PrePro.filter(code)
         # print(code_filtrado)
         Parser.tokens = Tokenizer(code_filtrado)
@@ -154,7 +161,7 @@ class Parser:
         resultado = Parser.parseExpression()
         if Parser.tokens.actual.type != "EOF":
             raise ValueError
-        return resultado
+        return resultado.Evaluate()
 
 
 class PrePro:
@@ -190,24 +197,45 @@ class Node:
 
 
 class BinOp(Node):
-    def __init__(self, value, children):
-        self.value = value
-        self.children = children
 
-    def Evaluate():
-        pass
+    def Evaluate(self):
+        print("BinOp")
+        right = self.children[0].Evaluate()
+        left = self.children[1].Evaluate()
+        if self.value == "PLUS":
+            return right + left
+        if self.value == "MINUS":
+            return right - left
+        if self.value == "DIV":
+            return right//left
+        if self.value == "MULT":
+            return right*left
+
+
+class UnOp(Node):
+
+    def Evaluate(self):
+        print("UnOp")
+        if self.value == "PLUS":
+            return self.children[0].Evaluate()
+        if self.value == "MINUS":
+            return -self.children[0].Evaluate()
+
+
+class IntVal(Node):
+
+    def Evaluate(self):
+        print(self.value)
+        print(type(self.value))
+        return self.value
 
 
 class NoOp(Node):
-
-    def __init__(self, value, children):
-        self.value = None
-        self.children = []
 
     def Evaluate():
         pass
 
 
 arg = sys.argv[1]
-print(Parser.run(arg))
+print("RESPOTA: ", Parser.run(arg))
 # print(Parser.run("/* a */ 1 /* b */"))
