@@ -79,16 +79,16 @@ class Parser:
     tokens = None
 
     def parseExpression():
-        # print("Expression")
+        print("Expression")
         resultado = Parser.parseTerm()
 
         while Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS":
             if Parser.tokens.actual.type == "PLUS":
-                # print("Plus")
+                print("Plus")
                 Parser.tokens.selectNext()
                 resultado += Parser.parseTerm()
             elif Parser.tokens.actual.type == "MINUS":
-                # print("Minus")
+                print("Minus")
                 Parser.tokens.selectNext()
                 resultado -= Parser.parseTerm()
             else:
@@ -96,16 +96,16 @@ class Parser:
         return resultado
 
     def parseTerm():
-        # print("Term")
+        print("Term")
         resultado = Parser.parseFactor()
 
         while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
             if Parser.tokens.actual.type == "MULT":
-                # print("Mult")
+                print("Mult")
                 Parser.tokens.selectNext()
                 resultado *= Parser.parseFactor()
             elif Parser.tokens.actual.type == "DIV":
-                # print("Div")
+                print("Div")
                 Parser.tokens.selectNext()
                 resultado //= Parser.parseFactor()
                 # resultado = int(resultado)
@@ -114,36 +114,36 @@ class Parser:
         return resultado
 
     def parseFactor():
-        # print("Factor")
+        print("Factor")
         resultado = None
 
         if Parser.tokens.actual.type == "INT":
-            # print("INT")
+            print("INT")
             resultado = Parser.tokens.actual.value
-            # print(resultado)
+            print(resultado)
             Parser.tokens.selectNext()
 
         elif Parser.tokens.actual.type == "PLUS":
-            # print("soma2")
+            print("soma2")
             Parser.tokens.selectNext()
             resultado = Parser.parseFactor()
         elif Parser.tokens.actual.type == "MINUS":
-            # print("sub2")
+            print("sub2")
             Parser.tokens.selectNext()
             resultado = -Parser.parseFactor()
 
         elif Parser.tokens.actual.type == "OPEN_PAR":
-            # print("par")
+            print("par")
             Parser.tokens.selectNext()
             resultado = Parser.parseExpression()
             if Parser.tokens.actual.type == "CLOSE_PAR":
-                # print("fechapar")
+                print("fechapar")
                 Parser.tokens.selectNext()
             else:
                 raise ValueError
         else:
             raise ValueError
-        # print("resultado: ", resultado)
+        print("resultado: ", resultado)
         return resultado
 
     def run(code):
@@ -178,6 +178,34 @@ class PrePro:
                 size = len(code)
             i += 1
         return code
+
+
+class Node:
+    def __init__(self, value, children):
+        self.value = value
+        self.children = children
+
+    def Evaluate():
+        pass
+
+
+class BinOp(Node):
+    def __init__(self, value, children):
+        self.value = value
+        self.children = children
+
+    def Evaluate():
+        pass
+
+
+class NoOp(Node):
+
+    def __init__(self, value, children):
+        self.value = None
+        self.children = []
+
+    def Evaluate():
+        pass
 
 
 arg = sys.argv[1]
