@@ -154,16 +154,15 @@ class Parser:
 
     def run():
         file = open("input.c", "r")
-        for line in file:
-            l = line.strip()
-            code_filtrado = PrePro.filter(l)
-            # print(code_filtrado)
-            Parser.tokens = Tokenizer(code_filtrado)
-            Parser.tokens.selectNext()
-            resultado = Parser.parseExpression()
-            if Parser.tokens.actual.type != "EOF":
-                raise ValueError
-            return resultado.Evaluate()
+        code_filtrado = PrePro.filter(file.read())
+        # print(code_filtrado)
+        file.close()
+        Parser.tokens = Tokenizer(code_filtrado)
+        Parser.tokens.selectNext()
+        resultado = Parser.parseExpression()
+        if Parser.tokens.actual.type != "EOF":
+            raise ValueError
+        return resultado.Evaluate()
 
 
 class PrePro:
