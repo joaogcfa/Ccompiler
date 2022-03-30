@@ -152,8 +152,8 @@ class Parser:
         # print("resultado: ", Node)
         return Node
 
-    def run():
-        file = open("input.c", "r")
+    def run(arg):
+        file = open(arg, "r")
         code_filtrado = PrePro.filter(file.read())
         # print(code_filtrado)
         file.close()
@@ -237,6 +237,6 @@ class NoOp(Node):
         pass
 
 
-# arg = sys.argv[1]
-print(Parser.run())
+arg = sys.argv[1]
+print(Parser.run(arg))
 # print(Parser.run("/* a */ 1 /* b */"))
