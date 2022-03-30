@@ -152,16 +152,18 @@ class Parser:
         # print("resultado: ", Node)
         return Node
 
-    def run(code):
-        # file = open("input.c", "r")
-        code_filtrado = PrePro.filter(code)
-        # print(code_filtrado)
-        Parser.tokens = Tokenizer(code_filtrado)
-        Parser.tokens.selectNext()
-        resultado = Parser.parseExpression()
-        if Parser.tokens.actual.type != "EOF":
-            raise ValueError
-        return resultado.Evaluate()
+    def run():
+        file = open("input.c", "r")
+        for line in file:
+            l = line.strip()
+            code_filtrado = PrePro.filter(l)
+            # print(code_filtrado)
+            Parser.tokens = Tokenizer(code_filtrado)
+            Parser.tokens.selectNext()
+            resultado = Parser.parseExpression()
+            if Parser.tokens.actual.type != "EOF":
+                raise ValueError
+            return resultado.Evaluate()
 
 
 class PrePro:
@@ -236,6 +238,6 @@ class NoOp(Node):
         pass
 
 
-arg = sys.argv[1]
-print(Parser.run(arg))
+# arg = sys.argv[1]
+print(Parser.run())
 # print(Parser.run("/* a */ 1 /* b */"))
