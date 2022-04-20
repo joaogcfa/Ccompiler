@@ -20,4 +20,5 @@
     printf(w + x);
     b = w + x_2;
     printf(b + w + z);
+    printf(x);
 }
