@@ -136,7 +136,7 @@ class Parser:
         return Node
 
     def parseStatement():
-        # print("Statement", Parser.tokens.actual.value)
+        print("Statement", Parser.tokens.actual.value)
         Node = None
         if Parser.tokens.actual.type == "IDENT":
             Node = Identifier(Parser.tokens.actual.value, [])
@@ -160,6 +160,7 @@ class Parser:
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "SEMI_COLON":
+                        print("SEMI COLON")
                         Parser.tokens.selectNext()
                         return Node
                     else:
@@ -169,6 +170,7 @@ class Parser:
             else:
                 raise Exception("ABRE PARENTESES DO PRINT")
         elif Parser.tokens.actual.type == "SEMI_COLON":
+            print("SEMI_COLON")
             Parser.tokens.selectNext()
             Node = NoOp("", [])
             return Node
@@ -176,7 +178,7 @@ class Parser:
             raise ValueError
 
     def parseExpression():
-        # print("EXPRESSION", Parser.tokens.actual.value)
+        print("EXPRESSION", Parser.tokens.actual.value)
         # print("Expression")
         Node = Parser.parseTerm()
         # print("BACK TO EXPRESSION", Parser.tokens.actual.value)
@@ -197,7 +199,7 @@ class Parser:
         return Node
 
     def parseTerm():
-        # print("Term", Parser.tokens.actual.value)
+        print("Term", Parser.tokens.actual.value)
         Node = Parser.parseFactor()
 
         while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
@@ -218,7 +220,7 @@ class Parser:
     def parseFactor():
         # print("Factor")
         Node = None
-        # print("FACTOR", Parser.tokens.actual.value)
+        print("FACTOR", Parser.tokens.actual.value)
         if Parser.tokens.actual.type == "INT":
             # print("INT")
             # resultado = Parser.tokens.actual.value
