@@ -1,24 +1,21 @@
 {
-    x = 3;
+    x = 1;
     y = 2;
-    x_2 = 7;
-    y_2 = 5;
+    x_3 = 3;
+    y_4 = 4;
 
     z = x + y;
-    z_2 = x_2 + y_2;
+    z_2 = x_3 + y_4;
     printf(x);
+    /*aaaa
+    a */
+    printf(y);
     printf(z);
+    printf(x_3);
+    printf(y_4);
     printf(z_2);
     printf(x - -y);
 
-    w = (x + y) / y_2;
+    w = (x + y) / y_4 * x_3;
     printf(/* bla */ w /* bla */);
-    /*bla bla
-    bla
-    bla */
-
-    printf(w + x);
-    b = w + x_2;
-    printf(b + w + z);
-    printf(x);
 }

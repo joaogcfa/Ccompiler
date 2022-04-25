@@ -374,6 +374,6 @@ class SymbolTable:
         # print("table", SymbolTable.table)
 
 
-# arg = sys.argv[1]
-Parser.run("input.c")
+arg = sys.argv[1]
+Parser.run(arg)
 # print(Parser.run("/* a */ 1 /* b */"))
