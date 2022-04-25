@@ -145,6 +145,7 @@ class Parser:
                 Parser.tokens.selectNext()
                 Node = Assignment("", [Node, Parser.parseExpression()])
             if Parser.tokens.actual.type == "SEMI_COLON":
+                print("SEMI COLON")
                 Parser.tokens.selectNext()
                 return Node
             else:
@@ -160,7 +161,7 @@ class Parser:
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "SEMI_COLON":
-                        # print("SEMI COLON")
+                        print("SEMI COLON")
                         Parser.tokens.selectNext()
                         return Node
                     else:
@@ -169,8 +170,8 @@ class Parser:
                     raise Exception("FALTOU FECHA PARENTESES DO PRINT")
             else:
                 raise Exception("ABRE PARENTESES DO PRINT")
-        elif Parser.tokens.actual.type == "SEMI_COLON":
-            # print("SEMI_COLON")
+        if Parser.tokens.actual.type == "SEMI_COLON":
+            print("SEMI_COLON DE NADA")
             Parser.tokens.selectNext()
             Node = NoOp("", [])
             return Node
@@ -274,6 +275,7 @@ class Parser:
         resultado = Parser.parseBlock()
         if Parser.tokens.actual.type != "EOF":
             raise ValueError
+        print("AST CRIADA")
         return resultado.Evaluate()
 
 
@@ -319,6 +321,7 @@ class Assignment(Node):
 class Block(Node):
     def Evaluate(self):
         for child in self.children:
+            print(child)
             child.Evaluate()
 
 
@@ -370,7 +373,7 @@ class IntVal(Node):
 
 class NoOp(Node):
 
-    def Evaluate():
+    def Evaluate(self):
         pass
 
 
@@ -383,6 +386,8 @@ class SymbolTable:
         # print("chave com valor: ", SymbolTable.table[chave])
         if chave in dict.keys(SymbolTable.table):
             return SymbolTable.table[chave]
+        else:
+            raise Exception("VARIAVEL NAO DEFINIDA")
 
     def Setter(chave, valor):
         SymbolTable.table[chave.value] = valor
