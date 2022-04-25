@@ -145,7 +145,7 @@ class Parser:
                 Parser.tokens.selectNext()
                 Node = Assignment("", [Node, Parser.parseExpression()])
             if Parser.tokens.actual.type == "SEMI_COLON":
-                print("SEMI COLON")
+                # print("SEMI COLON")
                 Parser.tokens.selectNext()
                 return Node
             else:
@@ -161,7 +161,7 @@ class Parser:
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "SEMI_COLON":
-                        print("SEMI COLON")
+                        # print("SEMI COLON")
                         Parser.tokens.selectNext()
                         return Node
                     else:
@@ -171,7 +171,7 @@ class Parser:
             else:
                 raise Exception("ABRE PARENTESES DO PRINT")
         if Parser.tokens.actual.type == "SEMI_COLON":
-            print("SEMI_COLON DE NADA")
+            # print("SEMI_COLON DE NADA")
             Parser.tokens.selectNext()
             Node = NoOp("", [])
             return Node
@@ -275,7 +275,6 @@ class Parser:
         resultado = Parser.parseBlock()
         if Parser.tokens.actual.type != "EOF":
             raise ValueError
-        print("AST CRIADA")
         return resultado.Evaluate()
 
 
@@ -321,7 +320,6 @@ class Assignment(Node):
 class Block(Node):
     def Evaluate(self):
         for child in self.children:
-            print(child)
             child.Evaluate()
 
 
