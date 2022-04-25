@@ -23,9 +23,12 @@ class Tokenizer:
             while self.position < len(self.origin) and self.origin[self.position] in [' ', "\n"]:
                 self.position += 1
 
-        if self.position >= len(self.origin):
+        if self.position == len(self.origin):
             self.actual = Token("", "EOF")
             return self.actual
+
+        elif self.position > len(self.origin):
+            raise Exception("eof passou")
 
         if self.origin[self.position] == '+':
             self.position += 1
@@ -127,7 +130,6 @@ class Parser:
             while Parser.tokens.actual.type != "CLOSE_BRACK":
                 # print(Parser.tokens.actual.value)
                 Node.children.append(Parser.parseStatement())
-                Parser.tokens.selectNext()
             Parser.tokens.selectNext()
         else:
             raise ValueError
@@ -143,7 +145,10 @@ class Parser:
                 Parser.tokens.selectNext()
                 Node = Assignment("", [Node, Parser.parseExpression()])
             if Parser.tokens.actual.type == "SEMI_COLON":
+                Parser.tokens.selectNext()
                 return Node
+            else:
+                raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
 
         elif Parser.tokens.actual.type == "PRINT":
             Parser.tokens.selectNext()
@@ -155,8 +160,16 @@ class Parser:
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "SEMI_COLON":
+                        Parser.tokens.selectNext()
                         return Node
+                    else:
+                        raise Exception("PONTO E VIRGULA DO PRINT")
+                else:
+                    raise Exception("FALTOU FECHA PARENTESES DO PRINT")
+            else:
+                raise Exception("ABRE PARENTESES DO PRINT")
         elif Parser.tokens.actual.type == "SEMI_COLON":
+            Parser.tokens.selectNext()
             Node = NoOp("", [])
             return Node
         else:
