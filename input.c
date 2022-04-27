@@ -1,9 +1,10 @@
 
 {
     x1 = 3;
-    x1 = x1 + 1;
-    ;
-    ;
-    ;
-    printf(x1);
+    x2 = 1;
+    if (x1 == x2)
+    {
+        printf(x1);
+    }
+    printf(10)
 }

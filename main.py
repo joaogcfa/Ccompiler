@@ -77,7 +77,44 @@ class Tokenizer:
 
         elif self.origin[self.position] == '=':
             self.position += 1
-            self.actual = Token('=', "EQUALS")
+            if self.origin[self.position] == "=":
+                self.position += 1
+                self.actual = Token('==', "EQUALIF")
+            else:
+                self.actual = Token('=', "EQUALS")
+            return self.actual
+
+        elif self.origin[self.position] == '>':
+            self.position += 1
+            self.actual = Token('>', "GREATER")
+            return self.actual
+
+        elif self.origin[self.position] == '<':
+            self.position += 1
+            self.actual = Token('<', "LESSER")
+            return self.actual
+
+        elif self.origin[self.position] == '|':
+            self.position += 1
+            if self.origin[self.position] == "|":
+                self.position += 1
+                self.actual = Token('||', "OR")
+            else:
+                raise Exception("FALTOU A SEGUNDA BARRA")
+            return self.actual
+
+        elif self.origin[self.position] == '&':
+            self.position += 1
+            if self.origin[self.position] == "&":
+                self.position += 1
+                self.actual = Token('&&', "AND")
+            else:
+                raise Exception("FALTOU O SEGUNDO AND")
+            return self.actual
+
+        elif self.origin[self.position] == '!':
+            self.position += 1
+            self.actual = Token('!', "NOT")
             return self.actual
 
         elif self.origin[self.position].isdigit():
@@ -110,6 +147,23 @@ class Tokenizer:
             if candidato == "printf":
                 # print("print")
                 self.actual = Token(candidato, "PRINT")
+
+            elif candidato == "scanf":
+                # print("print")
+                self.actual = Token(candidato, "SCANF")
+
+            elif candidato == "while":
+                # print("print")
+                self.actual = Token(candidato, "WHILE")
+
+            elif candidato == "if":
+                # print("print")
+                self.actual = Token(candidato, "IF")
+
+            elif candidato == "else":
+                # print("print")
+                self.actual = Token(candidato, "ELSE")
+
             else:
                 # print("ident: ", candidato)
                 self.actual = Token(candidato, "IDENT")
@@ -153,7 +207,7 @@ class Parser:
 
         elif Parser.tokens.actual.type == "PRINT":
             Parser.tokens.selectNext()
-            # print("145", Parser.tokens.actual.value)
+            # print("210", Parser.tokens.actual.value)
             if Parser.tokens.actual.type == "OPEN_PAR":
                 Parser.tokens.selectNext()
                 # print("147", Parser.tokens.actual.value)
@@ -170,6 +224,40 @@ class Parser:
                     raise Exception("FALTOU FECHA PARENTESES DO PRINT")
             else:
                 raise Exception("ABRE PARENTESES DO PRINT")
+
+        elif Parser.tokens.actual.type == "WHILE":
+            Parser.tokens.selectNext()
+            # print("145", Parser.tokens.actual.value)
+            if Parser.tokens.actual.type == "OPEN_PAR":
+                Parser.tokens.selectNext()
+                # print("147", Parser.tokens.actual.value)
+                Node = Parser.parseRealExpression()
+                if Parser.tokens.actual.type == "CLOSE_PAR":
+                    Parser.tokens.selectNext()
+                    Node = While("", [Node, Parser.parseStatement()])
+                    return Node
+                else:
+                    raise Exception("FALTOU FECHA PARENTESES DO WHILE")
+            else:
+                raise Exception("FALTOU ABRE PARENTESES DO WHILE")
+
+        elif Parser.tokens.actual.type == "IF":
+            Parser.tokens.selectNext()
+            # print("145", Parser.tokens.actual.value)
+            if Parser.tokens.actual.type == "OPEN_PAR":
+                Parser.tokens.selectNext()
+                # print("147", Parser.tokens.actual.value)
+                Node = Parser.parseRealExpression()
+                # print("AAAAAA", Parser.tokens.actual.value)
+                if Parser.tokens.actual.type == "CLOSE_PAR":
+                    Parser.tokens.selectNext()
+                    Node = If("", [Node, Parser.parseStatement()])
+                    return Node
+                else:
+                    raise Exception("FALTOU FECHA PARENTESES DO IF")
+            else:
+                raise Exception("FALTOU ABRE PARENTESES DO IF")
+
         if Parser.tokens.actual.type == "SEMI_COLON":
             # print("SEMI_COLON DE NADA")
             Parser.tokens.selectNext()
@@ -184,7 +272,7 @@ class Parser:
         Node = Parser.parseTerm()
         # print("BACK TO EXPRESSION", Parser.tokens.actual.value)
 
-        while Parser.tokens.actual.type == "PLUS" or Parser.tokens.actual.type == "MINUS":
+        while Parser.tokens.actual.type in ["PLUS", "MINUS", "OR"]:
             if Parser.tokens.actual.type == "PLUS":
                 # print("Plus")
                 Parser.tokens.selectNext()
@@ -195,15 +283,49 @@ class Parser:
                 Parser.tokens.selectNext()
                 # resultado -= Parser.parseTerm()
                 Node = BinOp("MINUS", [Node, Parser.parseTerm()])
+
+            elif Parser.tokens.actual.type == "OR":
+                # print("Minus")
+                Parser.tokens.selectNext()
+                # resultado -= Parser.parseTerm()
+                Node = BinOp("OR", [Node, Parser.parseTerm()])
             else:
-                raise ValueError
+                raise ValueError("ERRO NO EXPRESSION")
+        return Node
+
+    def parseRealExpression():
+        # print("EXPRESSION", Parser.tokens.actual.value)
+        # print("Expression")
+        Node = Parser.parseExpression()
+        # print("BACK TO EXPRESSION", Parser.tokens.actual.value)
+
+        while Parser.tokens.actual.type in ["EQUALIF", "LESSER", "GREATER"]:
+            if Parser.tokens.actual.type == "EQUALIF":
+                # print("Plus")
+                Parser.tokens.selectNext()
+                # resultado += Parser.parseTerm()
+                Node = BinOp("EQUALIF", [Node, Parser.parseExpression()])
+
+            elif Parser.tokens.actual.type == "LESSER":
+                # print("Minus")
+                Parser.tokens.selectNext()
+                # resultado -= Parser.parseTerm()
+                Node = BinOp("LESSER", [Node, Parser.parseExpression()])
+
+            elif Parser.tokens.actual.type == "GREATER":
+                # print("Minus")
+                Parser.tokens.selectNext()
+                # resultado -= Parser.parseTerm()
+                Node = BinOp("GREATER", [Node, Parser.parseExpression()])
+            else:
+                raise ValueError("NO IF CONDITIONS CORRECT OR FOUND")
         return Node
 
     def parseTerm():
         # print("Term", Parser.tokens.actual.value)
         Node = Parser.parseFactor()
 
-        while Parser.tokens.actual.type == "MULT" or Parser.tokens.actual.type == "DIV":
+        while Parser.tokens.actual.type in ["MULT", "DIV", "AND"]:
             if Parser.tokens.actual.type == "MULT":
                 # print("Mult")
                 Parser.tokens.selectNext()
@@ -214,8 +336,14 @@ class Parser:
                 Parser.tokens.selectNext()
                 # resultado //= Parser.parseFactor()
                 Node = BinOp("DIV", [Node, Parser.parseFactor()])
+
+            elif Parser.tokens.actual.type == "AND":
+                # print("Div")
+                Parser.tokens.selectNext()
+                # resultado //= Parser.parseFactor()
+                Node = BinOp("AND", [Node, Parser.parseFactor()])
             else:
-                raise ValueError
+                raise ValueError("ERRO NO TERM")
         return Node
 
     def parseFactor():
@@ -242,23 +370,46 @@ class Parser:
             Parser.tokens.selectNext()
             # resultado = Parser.parseFactor()
             Node = UnOp("PLUS", [Parser.parseFactor()])
+
         elif Parser.tokens.actual.type == "MINUS":
             # print("sub2")
             Parser.tokens.selectNext()
             # resultado = -Parser.parseFactor()
             Node = UnOp("MINUS", [Parser.parseFactor()])
 
+        elif Parser.tokens.actual.type == "NOT":
+            # print("sub2")
+            Parser.tokens.selectNext()
+            # resultado = -Parser.parseFactor()
+            Node = UnOp("NOT", [Parser.parseFactor()])
+
         elif Parser.tokens.actual.type == "OPEN_PAR":
             # print("par")
             Parser.tokens.selectNext()
             # print(Parser.tokens.actual.value)
 
-            Node = Parser.parseExpression()
+            Node = Parser.parseRealExpression()
             if Parser.tokens.actual.type == "CLOSE_PAR":
                 # print("fechapar")
                 Parser.tokens.selectNext()
             else:
                 raise ValueError
+
+        elif Parser.tokens.actual.type == "SCANF":
+            # print("par")
+            Parser.tokens.selectNext()
+            # print(Parser.tokens.actual.value)
+
+            if Parser.tokens.actual.type == "OPEN_PAR":
+                # print("fechapar")
+                Parser.tokens.selectNext()
+                if Parser.tokens.actual.type == "CLOSE_PAR":
+                    Parser.tokens.selectNext()
+                    Node = Scanf("", [])
+                else:
+                    raise ValueError("FALTOU FECHAR PARENTESES DO SCANF")
+            else:
+                raise ValueError("FALTOU ABRIR PARENTESES DO SCANF")
         else:
             raise ValueError
         # print("resultado: ", Node)
@@ -329,6 +480,28 @@ class Print(Node):
         print(children)
 
 
+class Scanf(Node):
+
+    def Evaluate(self):
+        return int(input())
+
+
+class While(Node):
+
+    def Evaluate(self):
+        while self.children[0].Evaluate():
+            self.children.children[1].Evaluate()
+
+
+class If(Node):
+
+    def Evaluate(self):
+        if self.children[0].Evaluate():
+            self.children[1].Evaluate()
+        elif len(self.children) > 2:
+            self.children[2].Evaluate()
+
+
 class Identifier(Node):
 
     def Evaluate(self):
@@ -349,6 +522,16 @@ class BinOp(Node):
             return right//left
         if self.value == "MULT":
             return right*left
+        if self.value == "EQUALIF":
+            return right == left
+        if self.value == "GREATER":
+            return right > left
+        if self.value == "LESSER":
+            return right < left
+        if self.value == "OR":
+            return right or left
+        if self.value == "AND":
+            return right and left
 
 
 class UnOp(Node):
@@ -359,6 +542,8 @@ class UnOp(Node):
             return self.children[0].Evaluate()
         if self.value == "MINUS":
             return -self.children[0].Evaluate()
+        if self.value == "NOT":
+            return not(self.children[0].Evaluate())
 
 
 class IntVal(Node):
@@ -394,4 +579,5 @@ class SymbolTable:
 
 arg = sys.argv[1]
 Parser.run(arg)
+# Parser.run("input.c")
 # print(Parser.run("/* a */ 1 /* b */"))
