@@ -251,8 +251,13 @@ class Parser:
                 # print("AAAAAA", Parser.tokens.actual.value)
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
-                    Node = If("", [Node, Parser.parseStatement()])
-                    return Node
+                    Node1 = If("", [Node, Parser.parseStatement()])
+                    if Parser.tokens.actual.type == "ELSE":
+                        Parser.tokens.selectNext()
+                        Node2 = If("", [Node, Node1, Parser.parseStatement()])
+                        return Node2
+                    else:
+                        return Node1
                 else:
                     raise Exception("FALTOU FECHA PARENTESES DO IF")
             else:
@@ -264,7 +269,7 @@ class Parser:
             Node = NoOp("", [])
             return Node
         else:
-            raise ValueError
+            return Parser.parseBlock()
 
     def parseExpression():
         # print("EXPRESSION", Parser.tokens.actual.value)
@@ -294,10 +299,10 @@ class Parser:
         return Node
 
     def parseRealExpression():
-        # print("EXPRESSION", Parser.tokens.actual.value)
+        # print("REAL EXPRESSION", Parser.tokens.actual.value)
         # print("Expression")
         Node = Parser.parseExpression()
-        # print("BACK TO EXPRESSION", Parser.tokens.actual.value)
+        # print("BACK TO REAL EXPRESSION", Parser.tokens.actual.value)
 
         while Parser.tokens.actual.type in ["EQUALIF", "LESSER", "GREATER"]:
             if Parser.tokens.actual.type == "EQUALIF":
@@ -324,7 +329,7 @@ class Parser:
     def parseTerm():
         # print("Term", Parser.tokens.actual.value)
         Node = Parser.parseFactor()
-
+        # print("Term back", Parser.tokens.actual.value)
         while Parser.tokens.actual.type in ["MULT", "DIV", "AND"]:
             if Parser.tokens.actual.type == "MULT":
                 # print("Mult")
@@ -490,12 +495,13 @@ class While(Node):
 
     def Evaluate(self):
         while self.children[0].Evaluate():
-            self.children.children[1].Evaluate()
+            self.children[1].Evaluate()
 
 
 class If(Node):
 
     def Evaluate(self):
+        # print(self.children[1].value)
         if self.children[0].Evaluate():
             self.children[1].Evaluate()
         elif len(self.children) > 2:
@@ -577,7 +583,6 @@ class SymbolTable:
         # print("table", SymbolTable.table)
 
 
-arg = sys.argv[1]
-Parser.run(arg)
-# Parser.run("input.c")
-# print(Parser.run("/* a */ 1 /* b */"))
+# arg = sys.argv[1]
+# Parser.run(arg)
+Parser.run("input.c")

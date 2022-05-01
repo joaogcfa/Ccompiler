@@ -1,10 +1,16 @@
 
+
 {
-    x1 = 3;
-    x2 = 1;
-    if (x1 == x2)
+    a = 0;
+    b = 1;
+    while ((a < 99999) && (b == 1))
     {
-        printf(x1);
+        a = a + 1;
+        printf(a);
+        if (a == 5)
+        {
+            b = 0;
+        }
     }
-    printf(10)
+    printf(a);
 }
