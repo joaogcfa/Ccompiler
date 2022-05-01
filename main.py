@@ -583,6 +583,6 @@ class SymbolTable:
         # print("table", SymbolTable.table)
 
 
-# arg = sys.argv[1]
-# Parser.run(arg)
-Parser.run("input.c")
+arg = sys.argv[1]
+Parser.run(arg)
+# Parser.run("input.c")
