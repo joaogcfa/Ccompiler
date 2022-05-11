@@ -1,10 +1,14 @@
+
 {
-    int x, y;
-    str z;
-    x = 1;
-    y = x || (1 == 1);
-    z = "x: ";
-    printf(x + y);
-    printf(z.x);
-    printf(x + z); /* ERROR */
+    /* All bool and int operations */
+    int y, z;
+    y = 2;
+    z = (y == 2);
+    printf(y + z);
+    printf(y - z);
+    printf(y * z);
+    printf(y / z);
+    printf(y == z);
+    printf(y < z);
+    printf(y > z);
 }

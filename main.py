@@ -235,7 +235,7 @@ class Parser:
             Parser.tokens.selectNext()
             if Parser.tokens.actual.type == "EQUALS":
                 Parser.tokens.selectNext()
-                Node = Assignment("", [Node, Parser.parseExpression()])
+                Node = Assignment("", [Node, Parser.parseRealExpression()])
                 # print("Statement", Parser.tokens.actual.value)
             if Parser.tokens.actual.type == "SEMI_COLON":
                 # print("SEMI COLON")
@@ -272,8 +272,8 @@ class Parser:
             # print("210", Parser.tokens.actual.value)
             if Parser.tokens.actual.type == "OPEN_PAR":
                 Parser.tokens.selectNext()
-                # print("147", Parser.tokens.actual.value)
-                Node = Print("", [Parser.parseExpression()])
+                Node = Print("", [Parser.parseRealExpression()])
+                # print("276", Parser.tokens.actual.value)
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "SEMI_COLON":
@@ -386,7 +386,7 @@ class Parser:
                 Node = BinOp("LESSER", [Node, Parser.parseExpression()])
 
             elif Parser.tokens.actual.type == "GREATER":
-                # print("Minus")
+                # print("GREATER")
                 Parser.tokens.selectNext()
                 # resultado -= Parser.parseTerm()
                 Node = BinOp("GREATER", [Node, Parser.parseExpression()])
@@ -618,11 +618,11 @@ class BinOp(Node):
 
         if right[1] == left[1]:
             if self.value == "EQUALIF":
-                return (right[0] == left[0], "INT")
+                return (int(right[0] == left[0]), "INT")
             if self.value == "GREATER":
-                return (right[0] > left[0], "INT")
+                return (int(right[0] > left[0]), "INT")
             if self.value == "LESSER":
-                return (right[0] < left[0], "INT")
+                return (int(right[0] < left[0]), "INT")
 
         if self.value == "DOT":
             return (str(right[0]) + str(left[0]), "STR")
