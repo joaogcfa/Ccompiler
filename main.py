@@ -1,4 +1,5 @@
 from curses.ascii import isdigit
+from multiprocessing.sharedctypes import Value
 from select import select
 import sys
 
@@ -117,6 +118,16 @@ class Tokenizer:
             self.actual = Token('!', "NOT")
             return self.actual
 
+        elif self.origin[self.position] == '.':
+            self.position += 1
+            self.actual = Token('.', "DOT")
+            return self.actual
+
+        elif self.origin[self.position] == ',':
+            self.position += 1
+            self.actual = Token(',', "COMMA")
+            return self.actual
+
         elif self.origin[self.position].isdigit():
             candidato = self.origin[self.position]
             self.position += 1
@@ -130,6 +141,25 @@ class Tokenizer:
                 else:
                     isInt = False
             self.actual = Token(int(candidato), "INT")
+            return self.actual
+
+        elif self.origin[self.position] == '"':
+            self.position += 1
+            candidato = self.origin[self.position]
+            self.position += 1
+            isStr = True
+            while isStr:
+                # print(self.origin[self.position])
+                if self.position == len(self.origin):
+                    isStr = False
+                elif self.origin[self.position] == '"':
+                    isStr = False
+                    self.position += 1
+                else:
+                    candidato += self.origin[self.position]
+                    self.position += 1
+            # print("candidato: ", candidato)
+            self.actual = Token(str(candidato), "STR")
             return self.actual
 
         elif self.origin[self.position].isalpha():
@@ -163,6 +193,14 @@ class Tokenizer:
             elif candidato == "else":
                 # print("print")
                 self.actual = Token(candidato, "ELSE")
+
+            elif candidato == "int":
+                # print("print")
+                self.actual = Token("INT", "TYPE")
+
+            elif candidato == "str":
+                # print("print")
+                self.actual = Token("STR", "TYPE")
 
             else:
                 # print("ident: ", candidato)
@@ -198,12 +236,36 @@ class Parser:
             if Parser.tokens.actual.type == "EQUALS":
                 Parser.tokens.selectNext()
                 Node = Assignment("", [Node, Parser.parseExpression()])
+                # print("Statement", Parser.tokens.actual.value)
             if Parser.tokens.actual.type == "SEMI_COLON":
                 # print("SEMI COLON")
                 Parser.tokens.selectNext()
                 return Node
             else:
                 raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+
+        if Parser.tokens.actual.type == "TYPE":
+            Node = VarDec(Parser.tokens.actual.value, [])
+            Parser.tokens.selectNext()
+            if Parser.tokens.actual.type == "IDENT":
+                Node.children.append(Identifier(
+                    Parser.tokens.actual.value, []))
+                Parser.tokens.selectNext()
+                # print(Parser.tokens.actual.value)
+                while Parser.tokens.actual.type == "COMMA":
+                    Parser.tokens.selectNext()
+                    if(Parser.tokens.actual.type != "IDENT"):
+                        raise ValueError("NOT IDENTIFIER")
+                    else:
+                        Node.children.append(Identifier(
+                            Parser.tokens.actual.value, []))
+                        Parser.tokens.selectNext()
+                if Parser.tokens.actual.type == "SEMI_COLON":
+                    # print("SEMI COLON")
+                    Parser.tokens.selectNext()
+                    return Node
+                else:
+                    raise Exception("FALTOU PONTO E VIRGULA NA CRIACAO")
 
         elif Parser.tokens.actual.type == "PRINT":
             Parser.tokens.selectNext()
@@ -277,7 +339,7 @@ class Parser:
         Node = Parser.parseTerm()
         # print("BACK TO EXPRESSION", Parser.tokens.actual.value)
 
-        while Parser.tokens.actual.type in ["PLUS", "MINUS", "OR"]:
+        while Parser.tokens.actual.type in ["PLUS", "MINUS", "OR", "DOT"]:
             if Parser.tokens.actual.type == "PLUS":
                 # print("Plus")
                 Parser.tokens.selectNext()
@@ -294,6 +356,12 @@ class Parser:
                 Parser.tokens.selectNext()
                 # resultado -= Parser.parseTerm()
                 Node = BinOp("OR", [Node, Parser.parseTerm()])
+
+            elif Parser.tokens.actual.type == "DOT":
+                # print("DOT")
+                Parser.tokens.selectNext()
+                # resultado -= Parser.parseTerm()
+                Node = BinOp("DOT", [Node, Parser.parseTerm()])
             else:
                 raise ValueError("ERRO NO EXPRESSION")
         return Node
@@ -360,6 +428,13 @@ class Parser:
             # resultado = Parser.tokens.actual.value
             # print("tipo: ", type(Parser.tokens.actual.value))
             Node = IntVal(Parser.tokens.actual.value, None)
+            Parser.tokens.selectNext()
+            # print("AFTER INT", Parser.tokens.actual.value)
+        elif Parser.tokens.actual.type == "STR":
+            # print("STR")
+            # resultado = Parser.tokens.actual.value
+            # print("tipo: ", type(Parser.tokens.actual.value))
+            Node = StrVal(Parser.tokens.actual.value, None)
             Parser.tokens.selectNext()
             # print("AFTER INT", Parser.tokens.actual.value)
 
@@ -481,20 +556,20 @@ class Block(Node):
 
 class Print(Node):
     def Evaluate(self):
-        children = self.children[0].Evaluate()
+        children = self.children[0].Evaluate()[0]
         print(children)
 
 
 class Scanf(Node):
 
     def Evaluate(self):
-        return int(input())
+        return (int(input()), "INT")
 
 
 class While(Node):
 
     def Evaluate(self):
-        while self.children[0].Evaluate():
+        while self.children[0].Evaluate()[0]:
             self.children[1].Evaluate()
 
 
@@ -502,7 +577,7 @@ class If(Node):
 
     def Evaluate(self):
         # print(self.children[1].value)
-        if self.children[0].Evaluate():
+        if self.children[0].Evaluate()[0]:
             self.children[1].Evaluate()
         elif len(self.children) > 2:
             self.children[2].Evaluate()
@@ -514,30 +589,43 @@ class Identifier(Node):
         return SymbolTable.Getter(self.value)
 
 
+class VarDec(Node):
+
+    def Evaluate(self):
+        for child in self.children:
+            SymbolTable.Create(child.value, self.value)
+
+
 class BinOp(Node):
 
     def Evaluate(self):
         right = self.children[0].Evaluate()
         left = self.children[1].Evaluate()
         # print(right, left, "right and left")
-        if self.value == "PLUS":
-            return right + left
-        if self.value == "MINUS":
-            return right - left
-        if self.value == "DIV":
-            return right//left
-        if self.value == "MULT":
-            return right*left
-        if self.value == "EQUALIF":
-            return right == left
-        if self.value == "GREATER":
-            return right > left
-        if self.value == "LESSER":
-            return right < left
-        if self.value == "OR":
-            return right or left
-        if self.value == "AND":
-            return right and left
+        if right[1] == 'INT' and left[1] == 'INT':
+            if self.value == "PLUS":
+                return (right[0] + left[0], "INT")
+            if self.value == "MINUS":
+                return (right[0] - left[0], "INT")
+            if self.value == "DIV":
+                return (right[0]//left[0], "INT")
+            if self.value == "MULT":
+                return (right[0]*left[0], "INT")
+            if self.value == "OR":
+                return (right[0] or left[0], "INT")
+            if self.value == "AND":
+                return (right[0] and left[0], "INT")
+
+        if right[1] == left[1]:
+            if self.value == "EQUALIF":
+                return (right[0] == left[0], "INT")
+            if self.value == "GREATER":
+                return (right[0] > left[0], "INT")
+            if self.value == "LESSER":
+                return (right[0] < left[0], "INT")
+
+        if self.value == "DOT":
+            return (str(right[0]) + str(left[0]), "STR")
 
 
 class UnOp(Node):
@@ -545,11 +633,11 @@ class UnOp(Node):
     def Evaluate(self):
         # print("UnOp")
         if self.value == "PLUS":
-            return self.children[0].Evaluate()
+            return (self.children[0].Evaluate()[0], 'INT')
         if self.value == "MINUS":
-            return -self.children[0].Evaluate()
+            return (-self.children[0].Evaluate()[0], 'INT')
         if self.value == "NOT":
-            return not(self.children[0].Evaluate())
+            return (not(self.children[0].Evaluate()[0]), 'INT')
 
 
 class IntVal(Node):
@@ -557,7 +645,13 @@ class IntVal(Node):
     def Evaluate(self):
         # print(self.value)
         # print(type(self.value))
-        return self.value
+        return (self.value, 'INT')
+
+
+class StrVal(Node):
+
+    def Evaluate(self):
+        return(self.value, 'STR')
 
 
 class NoOp(Node):
@@ -570,17 +664,24 @@ class SymbolTable:
 
     table = {}
 
+    def Create(chave, tipo):
+        if chave in SymbolTable.table:
+            raise Exception("VARIAVEL DEFINIDA DUAS VEZES")
+        else:
+            SymbolTable.table[chave] = (None, tipo)
+
     def Getter(chave):
-        # print("chave: ", chave)
-        # print("chave com valor: ", SymbolTable.table[chave])
-        if chave in dict.keys(SymbolTable.table):
+        if chave in SymbolTable.table:
             return SymbolTable.table[chave]
         else:
             raise Exception("VARIAVEL NAO DEFINIDA")
 
     def Setter(chave, valor):
-        SymbolTable.table[chave.value] = valor
-        # print("table", SymbolTable.table)
+        if chave.value in SymbolTable.table:
+            if valor[1] == SymbolTable.table[chave.value][1]:
+                SymbolTable.table[chave.value] = valor
+        else:
+            raise Exception("VARIAVEL NAO DEFINIDA")
 
 
 arg = sys.argv[1]
