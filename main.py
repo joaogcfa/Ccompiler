@@ -543,8 +543,8 @@ class Asm:
     def dump():
         rodape = open("rodape.asm").read()
         Asm.code += (rodape)
-        file = sys.argv[1].split('/')[-1].split('.')[0]
-        program = open("{0}.asm".format(file), 'w')
+        file = sys.argv[1].replace(".c", ".asm")
+        program = open("{0}".format(file), 'w')
         program.write(Asm.code)
 class Node:
 
