@@ -2,6 +2,7 @@ from curses.ascii import isdigit
 from multiprocessing.sharedctypes import Value
 from select import select
 import sys
+from traceback import print_tb
 
 
 class Token:
@@ -506,7 +507,8 @@ class Parser:
         resultado = Parser.parseBlock()
         if Parser.tokens.actual.type != "EOF":
             raise ValueError
-        return resultado.Evaluate()
+        resultado.Evaluate()
+        Asm.dump()
 
 
 class PrePro:
@@ -532,13 +534,31 @@ class PrePro:
         return code
 
 
+class Asm:
+    code = open("cabecalho.asm").read()
+    
+    def write(cmd):
+        Asm.code += (cmd + '\n')
+
+    def dump():
+        rodape = open("rodape.asm").read()
+        Asm.code += (rodape)
+        program = open("program.asm", 'w')
+        program.write(Asm.code)
 class Node:
+
+    id = 0
     def __init__(self, value, children):
         self.value = value
         self.children = children
+        self.id = Node.newId()
 
     def Evaluate():
         pass
+    
+    def newId():
+        Node.id += 1
+        return Node.id
 
 
 class Assignment(Node):
@@ -546,6 +566,8 @@ class Assignment(Node):
     def Evaluate(self):
         SymbolTable.Setter(
             self.children[0], self.children[1].Evaluate())
+        Asm.write("MOV [EBP - {0}], EBX".format(SymbolTable.table[self.children[0].value][2]))
+
 
 
 class Block(Node):
@@ -557,7 +579,10 @@ class Block(Node):
 class Print(Node):
     def Evaluate(self):
         children = self.children[0].Evaluate()[0]
-        print(children)
+        Asm.write("PUSH EBX ; inicio do print")
+        Asm.write("CALL print ; chamada de funcao")
+        Asm.write("POP EBX ; Desempilhe os argumentos")
+        # print(children)
 
 
 class Scanf(Node):
@@ -569,8 +594,13 @@ class Scanf(Node):
 class While(Node):
 
     def Evaluate(self):
-        while self.children[0].Evaluate()[0]:
-            self.children[1].Evaluate()
+        Asm.write("LOOP_{0}:".format(self.id))
+        self.children[0].Evaluate()
+        Asm.write("CMP EBX, False ; verifica se o teste deu falso")
+        Asm.write("JE EXIT_{0} ; e sai caso for igual a falso.".format(self.id))
+        self.children[1].Evaluate()
+        Asm.write("JMP LOOP_{0} ; e sai caso for igual a falso.".format(self.id))
+        Asm.write("EXIT_{0}:".format(self.id))
 
 
 class If(Node):
@@ -586,12 +616,15 @@ class If(Node):
 class Identifier(Node):
 
     def Evaluate(self):
+        # print(SymbolTable.Getter(self.value))
+        Asm.write("MOV EBX, [EBP - {0}]".format(SymbolTable.Getter(self.value)[2]))
         return SymbolTable.Getter(self.value)
 
 
 class VarDec(Node):
 
     def Evaluate(self):
+        Asm.write("PUSH DWORD 0")
         for child in self.children:
             SymbolTable.Create(child.value, self.value)
 
@@ -600,32 +633,52 @@ class BinOp(Node):
 
     def Evaluate(self):
         right = self.children[0].Evaluate()
+        Asm.write("PUSH EBX")
         left = self.children[1].Evaluate()
+        Asm.write("POP EAX")
         # print(right, left, "right and left")
         if right[1] == 'INT' and left[1] == 'INT':
             if self.value == "PLUS":
-                return (right[0] + left[0], "INT")
+                Asm.write("ADD EAX, EBX")
+                Asm.write("MOV EBX, EAX")
+                return (None, None)
             if self.value == "MINUS":
-                return (right[0] - left[0], "INT")
+                Asm.write("SUB EAX, EBX")
+                Asm.write("MOV EBX, EAX")
+                return (None, None)
             if self.value == "DIV":
-                return (right[0]//left[0], "INT")
+                Asm.write("IDIV EBX")
+                Asm.write("MOV EBX, EAX")
+                return (None, None)
             if self.value == "MULT":
-                return (right[0]*left[0], "INT")
+                Asm.write("IMUL EBX")
+                Asm.write("MOV EBX, EAX")
+                return (None, None)
             if self.value == "OR":
-                return (right[0] or left[0], "INT")
+                Asm.write("OR EAX, EBX")
+                Asm.write("MOV EBX, EAX")
+                return (None, None)
             if self.value == "AND":
-                return (right[0] and left[0], "INT")
+                Asm.write("AND EAX, EBX")
+                Asm.write("MOV EBX, EAX")
+                return (None, None)
 
-        if right[1] == left[1]:
-            if self.value == "EQUALIF":
-                return (int(right[0] == left[0]), "INT")
-            if self.value == "GREATER":
-                return (int(right[0] > left[0]), "INT")
-            if self.value == "LESSER":
-                return (int(right[0] < left[0]), "INT")
+        if self.value == "EQUALIF":
+            Asm.write("CMP EAX, EBX ; comparacao igual")
+            Asm.write("CALL binop_je")
+            return (None, None)
+        if self.value == "GREATER":
+            Asm.write("CMP EAX, EBX ; comparacao maior que")
+            Asm.write("CALL binop_jg")
+            return (None, None)
+        if self.value == "LESSER":
+            Asm.write("CMP EAX, EBX ; comparacao menor que")
+            Asm.write("CALL binop_jl")
+            return (None, None)
 
-        if self.value == "DOT":
-            return (str(right[0]) + str(left[0]), "STR")
+        # if self.value == "DOT":
+        #     return (str(right[0]) + str(left[0]), "STR")
+        
 
 
 class UnOp(Node):
@@ -645,6 +698,8 @@ class IntVal(Node):
     def Evaluate(self):
         # print(self.value)
         # print(type(self.value))
+        cmd = "MOV EBX, " + str(self.value)
+        Asm.write(cmd)
         return (self.value, 'INT')
 
 
@@ -663,12 +718,14 @@ class NoOp(Node):
 class SymbolTable:
 
     table = {}
+    adder = 0
 
     def Create(chave, tipo):
         if chave in SymbolTable.table:
             raise Exception("VARIAVEL DEFINIDA DUAS VEZES")
         else:
-            SymbolTable.table[chave] = (None, tipo)
+            SymbolTable.adder += 4
+            SymbolTable.table[chave] = (None, tipo, SymbolTable.adder)
 
     def Getter(chave):
         if chave in SymbolTable.table:
@@ -679,7 +736,8 @@ class SymbolTable:
     def Setter(chave, valor):
         if chave.value in SymbolTable.table:
             if valor[1] == SymbolTable.table[chave.value][1]:
-                SymbolTable.table[chave.value] = valor
+                trinca = (valor[0], valor[1], SymbolTable.table[chave.value][2])
+                SymbolTable.table[chave.value] = trinca
         else:
             raise Exception("VARIAVEL NAO DEFINIDA")
 
