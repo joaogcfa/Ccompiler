@@ -613,6 +613,26 @@ class If(Node):
             self.children[2].Evaluate()
 
 
+class If(Node):
+    def Evaluate(self):
+        self.children[0].Evaluate()
+        Asm.write("CMP EBX,  False")
+        if len(self.children) > 2:
+            Asm.write("JE LABEL_{0}".format(self.id))
+        else:
+            Asm.write("JE EXIT_{0}".format(self.id))
+
+        self.children[1].Evaluate()
+        Asm.write("JMP EXIT_{0}".format(self.id))
+
+        if len(self.children) > 2:
+            Asm.write("LABEL_{0}:".format(self.id))
+            self.children[2].Evaluate()
+            Asm.write("JMP EXIT_{0}:".format(self.id))
+
+        Asm.write("EXIT_{0}:".format(self.id))
+
+
 class Identifier(Node):
 
     def Evaluate(self):

@@ -1,17 +1,11 @@
 
 {
     int i;
-    int n;
-    int f;
-    n = 5;
-    i = 2;
-    f = 1;
+    i = 5;
 
-    while (i < n + 1)
-    {
-        f = f * i;
-        i = i + 1;
+    if(i< 10){
+        i = 10;
     }
 
-    printf(f);
+    printf(i);
 }
