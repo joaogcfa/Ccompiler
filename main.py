@@ -628,7 +628,7 @@ class If(Node):
         if len(self.children) > 2:
             Asm.write("LABEL_{0}:".format(self.id))
             self.children[2].Evaluate()
-            Asm.write("JMP EXIT_{0}:".format(self.id))
+            Asm.write("JMP EXIT_{0}".format(self.id))
 
         Asm.write("EXIT_{0}:".format(self.id))
 

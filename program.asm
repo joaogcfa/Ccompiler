@@ -83,21 +83,45 @@ _start:
 ; codigo gerado pelo compilador
 
 PUSH DWORD 0
+PUSH DWORD 0
+PUSH DWORD 0
 MOV EBX, 5
+MOV [EBP - 8], EBX
+MOV EBX, 2
 MOV [EBP - 4], EBX
+MOV EBX, 1
+MOV [EBP - 12], EBX
+LOOP_33:
 MOV EBX, [EBP - 4]
 PUSH EBX
-MOV EBX, 10
+MOV EBX, [EBP - 8]
+PUSH EBX
+MOV EBX, 1
+POP EAX
+ADD EAX, EBX
+MOV EBX, EAX
 POP EAX
 CMP EAX, EBX ; comparacao menor que
 CALL binop_jl
-CMP EBX,  False
-JE EXIT_14
-MOV EBX, 10
-MOV [EBP - 4], EBX
-JMP EXIT_14
-EXIT_14:
+CMP EBX, False ; verifica se o teste deu falso
+JE EXIT_33 ; e sai caso for igual a falso.
+MOV EBX, [EBP - 12]
+PUSH EBX
 MOV EBX, [EBP - 4]
+POP EAX
+IMUL EBX
+MOV EBX, EAX
+MOV [EBP - 12], EBX
+MOV EBX, [EBP - 4]
+PUSH EBX
+MOV EBX, 1
+POP EAX
+ADD EAX, EBX
+MOV EBX, EAX
+MOV [EBP - 4], EBX
+JMP LOOP_33 ; e sai caso for igual a falso.
+EXIT_33:
+MOV EBX, [EBP - 12]
 PUSH EBX ; inicio do print
 CALL print ; chamada de funcao
 POP EBX ; Desempilhe os argumentos
