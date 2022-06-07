@@ -1,14 +1,39 @@
-
+void main()
 {
-    /* All bool and int operations */
-    int y, z;
-    y = 2;
-    z = (y == 2);
-    printf(y + z);
-    printf(y - z);
-    printf(y * z);
-    printf(y / z);
-    printf(y == z);
-    printf(y < z);
-    printf(y > z);
+    /* v2.2 testing */
+    int x_1;
+
+    x_1 = scanf();
+    if ((x_1 > 1) && !(x_1 < 1))
+    {
+        x_1 = 3;
+    }
+    else
+    {
+        {
+            x_1 = (-20 + 30) * 4 * 3 / 40;
+            ;
+            ;
+            ;
+            ;
+            /* teste de comentario */
+        }
+    }
+    printf(x_1);
+    x_1 = scanf();
+    if ((x_1 > 1) && !(x_1 < 1))
+        x_1 = 3;
+    else
+        x_1 = (-20 + 30) * 12 / 40;
+    ;
+    ;
+    ;
+    ;
+
+    printf(x_1);
+    while ((x_1 > 1) || (x_1 == 1))
+    {
+        x_1 = x_1 - 1;
+        printf(x_1);
+    }
 }

@@ -1,3 +1,4 @@
+from ast import arguments
 from curses.ascii import isdigit
 from multiprocessing.sharedctypes import Value
 from select import select
@@ -201,6 +202,14 @@ class Tokenizer:
             elif candidato == "str":
                 # print("print")
                 self.actual = Token("STR", "TYPE")
+            
+            elif candidato == "return":
+                # print("print")
+                self.actual = Token(candidato, "RETURN")
+            
+            elif candidato == "void":
+                # print("print")
+                self.actual = Token(candidato, "TYPE")
 
             else:
                 # print("ident: ", candidato)
@@ -214,13 +223,88 @@ class Tokenizer:
 class Parser:
     tokens = None
 
+    def parseProgram():
+        nodeBlock = Block("", [])
+        while Parser.tokens.actual.type != "EOF":
+            nodeBlock.children.append(Parser.parseDeclaration())
+        return nodeBlock
+
+    def parseDeclaration():
+        
+
+        if Parser.tokens.actual.type == "TYPE":
+            NodeFuncDec = FuncDec(Parser.tokens.actual.value, [])
+            Parser.tokens.selectNext()
+
+            if Parser.tokens.actual.type == "IDENT":
+                NodeVar = VarDec(Parser.tokens.actual.value, [])
+                NodeVar.children.append(Identifier(
+                    Parser.tokens.actual.value, []))
+                NodeFuncDec.children.append(NodeVar)
+                Parser.tokens.selectNext()
+
+
+                if Parser.tokens.actual.type == "OPEN_PAR":
+                    Parser.tokens.selectNext()
+
+                    if Parser.tokens.actual.type == "CLOSE_PAR":
+                        Parser.tokens.selectNext()
+                        nodeBlock =Parser.parseBlock()
+                        NodeFuncDec.children.append(nodeBlock)
+
+                    elif Parser.tokens.actual.type == "TYPE":
+                        NodeVar = VarDec(Parser.tokens.actual.value, [])
+                        Parser.tokens.selectNext()
+
+                        if Parser.tokens.actual.type == "IDENT":
+                            NodeVar.children.append(Identifier(
+                                Parser.tokens.actual.value, []))
+                            NodeFuncDec.children.append(NodeVar)
+                            Parser.tokens.selectNext()
+
+                            while Parser.tokens.actual.type == "COMMA":
+                                Parser.tokens.selectNext()
+
+                                if Parser.tokens.actual.type == "TYPE":
+                                    NodeVar = VarDec(Parser.tokens.actual.value, [])
+                                    Parser.tokens.selectNext()
+
+                                    if Parser.tokens.actual.type == "IDENT":
+                                        NodeVar.children.append(Identifier(
+                                            Parser.tokens.actual.value, []))
+                                        NodeFuncDec.children.append(NodeVar)
+                                        Parser.tokens.selectNext()
+
+                                    else:
+                                        raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+
+                                else:
+                                    raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+
+                            if Parser.tokens.actual.type == "CLOSE_PAR":
+                                nodeBlock = Parser.parseBlock()
+
+                            else:
+                                raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+                        else:
+                            raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+                    else:
+                        raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+                else:
+                    raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+            else:
+                raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+            
+        else:
+            raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+        return NodeFuncDec
+
+
     def parseBlock():
         Node = Block("", [])
-        # print(Parser.tokens.actual.value)
         if Parser.tokens.actual.type == "OPEN_BRACK":
             Parser.tokens.selectNext()
-            while Parser.tokens.actual.type != "CLOSE_BRACK":
-                # print(Parser.tokens.actual.value)
+            while Parser.tokens.actual.type not in ["CLOSE_BRACK", "RETURN"]:
                 Node.children.append(Parser.parseStatement())
             Parser.tokens.selectNext()
         else:
@@ -231,18 +315,42 @@ class Parser:
         # print("Statement", Parser.tokens.actual.value)
         Node = None
         if Parser.tokens.actual.type == "IDENT":
+            func_call = Parser.tokens.actual.value
+            arguments = []
             Node = Identifier(Parser.tokens.actual.value, [])
             Parser.tokens.selectNext()
             if Parser.tokens.actual.type == "EQUALS":
                 Parser.tokens.selectNext()
                 Node = Assignment("", [Node, Parser.parseRealExpression()])
                 # print("Statement", Parser.tokens.actual.value)
-            if Parser.tokens.actual.type == "SEMI_COLON":
-                # print("SEMI COLON")
+                if Parser.tokens.actual.type == "SEMI_COLON":
+                    # print("SEMI COLON")
+                    Parser.tokens.selectNext()
+                    return Node
+            elif Parser.tokens.actual.type == "OPEN_PAR":
                 Parser.tokens.selectNext()
-                return Node
-            else:
-                raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+                if Parser.tokens.actual.type == "CLOSE_PAR":
+                    Parser.tokens.selectNext()
+                    if Parser.tokens.actual.type == "SEMI_COLON":
+                        Parser.tokens.selectNext()
+                        return FuncCall(func_call, [])
+                    else:
+                        raise Exception("FALTOU PONTO E VIRGULA NA CRIACAO") 
+                else:
+                    Node = Parser.parseRealExpression()
+                    arguments.append(Node)
+                    while Parser.tokens.actual.type == "COMMA":
+                        Parser.tokens.selectNext()
+                        arguments.append(Parser.parseRealExpression())
+                    if Parser.tokens.actual.type == "CLOSE_PAR":
+                        Parser.tokens.selectNext()
+                        if Parser.tokens.actual.type == "SEMI_COLON":
+                            Parser.tokens.selectNext()
+                            return FuncCall(func_call, arguments)
+                        else:
+                            raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
+                    else:
+                        raise Exception("FALTOU FECHA PARENTESES")
 
         if Parser.tokens.actual.type == "TYPE":
             Node = VarDec(Parser.tokens.actual.value, [])
@@ -251,7 +359,7 @@ class Parser:
                 Node.children.append(Identifier(
                     Parser.tokens.actual.value, []))
                 Parser.tokens.selectNext()
-                # print(Parser.tokens.actual.value)
+                # print("TYPE", Parser.tokens.actual.value)
                 while Parser.tokens.actual.type == "COMMA":
                     Parser.tokens.selectNext()
                     if(Parser.tokens.actual.type != "IDENT"):
@@ -261,8 +369,8 @@ class Parser:
                             Parser.tokens.actual.value, []))
                         Parser.tokens.selectNext()
                 if Parser.tokens.actual.type == "SEMI_COLON":
-                    # print("SEMI COLON")
                     Parser.tokens.selectNext()
+                    # print(Parser.tokens.actual.value)
                     return Node
                 else:
                     raise Exception("FALTOU PONTO E VIRGULA NA CRIACAO")
@@ -272,8 +380,8 @@ class Parser:
             # print("210", Parser.tokens.actual.value)
             if Parser.tokens.actual.type == "OPEN_PAR":
                 Parser.tokens.selectNext()
+                # print("384", Parser.tokens.actual.value)
                 Node = Print("", [Parser.parseRealExpression()])
-                # print("276", Parser.tokens.actual.value)
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "SEMI_COLON":
@@ -286,6 +394,27 @@ class Parser:
                     raise Exception("FALTOU FECHA PARENTESES DO PRINT")
             else:
                 raise Exception("ABRE PARENTESES DO PRINT")
+
+        elif Parser.tokens.actual.type == "RETURN":
+            Node = Return("", [])
+            Parser.tokens.selectNext()
+            # print("210", Parser.tokens.actual.value)
+            if Parser.tokens.actual.type == "OPEN_PAR":
+                Parser.tokens.selectNext()
+                Node.children.append(Parser.parseStatement())
+                # print("276", Parser.tokens.actual.value)
+                if Parser.tokens.actual.type == "CLOSE_PAR":
+                    Parser.tokens.selectNext()
+                    if Parser.tokens.actual.type == "SEMI_COLON":
+                        # print("SEMI COLON")
+                        Parser.tokens.selectNext()
+                        return Node
+                    else:
+                        raise Exception("PONTO E VIRGULA DO RETURN")
+                else:
+                    raise Exception("FALTOU FECHA PARENTESES DO RETURN")
+            else:
+                raise Exception("ABRE PARENTESES DO RETURNN")
 
         elif Parser.tokens.actual.type == "WHILE":
             Parser.tokens.selectNext()
@@ -441,8 +570,28 @@ class Parser:
         elif Parser.tokens.actual.type == "IDENT":
             # print("soma2")
             # resultado = Parser.parseFactor()
-            Node = Identifier(Parser.tokens.actual.value, [])
-            Parser.tokens.selectNext()
+            value = Parser.tokens.actual.value
+            arguments = []
+            # Parser.tokens.selectNext()
+            if Parser.tokens.actual.type == "OPEN_PAR":
+                Parser.tokens.selectNext()
+                if Parser.tokens.actual.type == "CLOSE_PAR":
+                    Parser.tokens.selectNext()
+                    return FuncCall(value, [])
+                else:
+                    Node = Parser.parseRealExpression()
+                    arguments.append(Node)
+                    while Parser.tokens.actual.type == "COMMA":
+                        Parser.tokens.selectNext()
+                        arguments.append(Parser.parseRealExpression())
+                    if Parser.tokens.actual.type == "CLOSE_PAR":
+                        Parser.tokens.selectNext()
+                        return FuncCall(value, arguments)
+                    else:
+                        raise Exception("FALTOU FECHA PARENTESES")
+            else:
+                Node = Identifier(Parser.tokens.actual.value, [])
+                Parser.tokens.selectNext()
             # print("AFTER IDENT", Parser.tokens.actual.value)
 
         elif Parser.tokens.actual.type == "PLUS":
@@ -501,13 +650,15 @@ class Parser:
         # print(code_filtrado)
         file.close()
         Parser.tokens = Tokenizer(code_filtrado)
-        Parser.table = SymbolTable()
         Parser.tokens.selectNext()
-        resultado = Parser.parseBlock()
+        resultado = Parser.parseProgram()
         if Parser.tokens.actual.type != "EOF":
             raise ValueError
-        return resultado.Evaluate()
-
+        else:
+            Parser.table = SymbolTable()
+            Node = FuncCall("main", [])
+            resultado.children.append(Node)
+            return resultado.Evaluate(Parser.table)
 
 class PrePro:
     def filter(code):
@@ -543,64 +694,65 @@ class Node:
 
 class Assignment(Node):
 
-    def Evaluate(self):
-        SymbolTable.Setter(
-            self.children[0], self.children[1].Evaluate())
+    def Evaluate(self, st):
+        st.Setter(
+            self.children[0], self.children[1].Evaluate(st))
 
 
 class Block(Node):
-    def Evaluate(self):
+    def Evaluate(self, st):
         for child in self.children:
-            child.Evaluate()
+            child.Evaluate(st)
 
 
 class Print(Node):
-    def Evaluate(self):
-        children = self.children[0].Evaluate()[0]
+    def Evaluate(self, st):
+        children = self.children[0].Evaluate(st)[0]
         print(children)
 
 
 class Scanf(Node):
 
-    def Evaluate(self):
+    def Evaluate(self, st):
         return (int(input()), "INT")
 
 
 class While(Node):
 
-    def Evaluate(self):
-        while self.children[0].Evaluate()[0]:
-            self.children[1].Evaluate()
+    def Evaluate(self, st):
+        while self.children[0].Evaluate(st)[0]:
+            self.children[1].Evaluate(st)
 
 
 class If(Node):
 
-    def Evaluate(self):
+    def Evaluate(self, st):
         # print(self.children[1].value)
-        if self.children[0].Evaluate()[0]:
-            self.children[1].Evaluate()
+        if self.children[0].Evaluate(st)[0]:
+            self.children[1].Evaluate(st)
         elif len(self.children) > 2:
-            self.children[2].Evaluate()
+            self.children[2].Evaluate(st)
 
 
 class Identifier(Node):
 
-    def Evaluate(self):
-        return SymbolTable.Getter(self.value)
+    def Evaluate(self, st):
+        return st.Getter(self.value)
 
 
 class VarDec(Node):
 
-    def Evaluate(self):
+    def Evaluate(self, st):
+        # print("oi")
         for child in self.children:
-            SymbolTable.Create(child.value, self.value)
+            st.Create(child.value, self.value)
 
 
 class BinOp(Node):
 
-    def Evaluate(self):
-        right = self.children[0].Evaluate()
-        left = self.children[1].Evaluate()
+    def Evaluate(self, st):
+        right = self.children[0].Evaluate(st)
+        left = self.children[1].Evaluate(st)
         # print(right, left, "right and left")
         if right[1] == 'INT' and left[1] == 'INT':
             if self.value == "PLUS":
@@ -630,19 +782,19 @@ class BinOp(Node):
 
 class UnOp(Node):
 
-    def Evaluate(self):
+    def Evaluate(self, st):
         # print("UnOp")
         if self.value == "PLUS":
-            return (self.children[0].Evaluate()[0], 'INT')
+            return (self.children[0].Evaluate(st)[0], 'INT')
         if self.value == "MINUS":
-            return (-self.children[0].Evaluate()[0], 'INT')
+            return (-self.children[0].Evaluate(st)[0], 'INT')
         if self.value == "NOT":
-            return (not(self.children[0].Evaluate()[0]), 'INT')
+            return (not(self.children[0].Evaluate(st)[0]), 'INT')
 
 
 class IntVal(Node):
 
-    def Evaluate(self):
+    def Evaluate(self, st):
         # print(self.value)
         # print(type(self.value))
         return (self.value, 'INT')
@@ -650,36 +802,94 @@ class IntVal(Node):
 
 class StrVal(Node):
 
-    def Evaluate(self):
+    def Evaluate(self, st):
         return(self.value, 'STR')
 
 
 class NoOp(Node):
 
-    def Evaluate(self):
+    def Evaluate(self, st):
         pass
 
 
-class SymbolTable:
+class FuncDec(Node):
 
-    table = {}
+    def Evaluate(self, st):
+        FuncTable.Create(self.children[0].value, self)
+        
+class FuncCall(Node):
+
+    def Evaluate(self, st):
+        table = SymbolTable()
+
+        tipo, declaration = FuncTable.Getter(self.value)
+        values = []
+
+        for child in range(1, len(self.children)-1):
+            declaration.children[child].Evaluate(table)
+            val = declaration.children[child].children[0].value
+            values.append(val)
+
+        for child in range(0, len(self.children)-1):
+            arg = child.Evaluate(st)
+            table.Setter(values[child], arg)
+
+        return declaration.children[-1].Evaluate(table)
+class Return(Node):
+
+    def Evaluate(self, st):
+        return self.children[0].Evaluate(st)
+
+
+class FuncTable:
+
+    funcTable = {}
 
     def Create(chave, tipo):
-        if chave in SymbolTable.table:
+        # print("chave", chave)
+        if chave in FuncTable.funcTable:
             raise Exception("VARIAVEL DEFINIDA DUAS VEZES")
         else:
-            SymbolTable.table[chave] = (None, tipo)
+            FuncTable.funcTable[chave] = (None, tipo)
 
     def Getter(chave):
-        if chave in SymbolTable.table:
-            return SymbolTable.table[chave]
+        # print("chave", chave)
+        if chave in FuncTable.funcTable:
+            return FuncTable.funcTable[chave]
+        else:
+            raise Exception("FUNCAO NAO DEFINIDA")
+
+    def Setter(chave, valor):
+        if chave.value in FuncTable.funcTable:
+            if valor[1] == FuncTable.funcTable[chave.value][1]:
+                FuncTable.funcTable[chave.value] = valor
+        else:
+            raise Exception("FUNCAO NAO DEFINIDA")
+
+class SymbolTable:
+
+    def __init__(self):
+        self.table = {}
+
+    def Create(self, chave, tipo):
+        # print("table: ", chave)
+        if chave in self.table:
+            raise Exception("VARIAVEL DEFINIDA DUAS VEZES")
+        else:
+            self.table[chave] = (None, tipo)
+            # print(self.table)
+
+    def Getter(self, chave):
+        if chave in self.table:
+            return self.table[chave]
         else:
             raise Exception("VARIAVEL NAO DEFINIDA")
 
-    def Setter(chave, valor):
-        if chave.value in SymbolTable.table:
-            if valor[1] == SymbolTable.table[chave.value][1]:
-                SymbolTable.table[chave.value] = valor
+    def Setter(self, chave, valor):
+        # print(chave.value)
+        if chave.value in self.table:
+            if valor[1] == self.table[chave.value][1]:
+                self.table[chave.value] = valor
         else:
             raise Exception("VARIAVEL NAO DEFINIDA")
 
