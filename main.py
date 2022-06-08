@@ -282,7 +282,9 @@ class Parser:
                                     raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
 
                             if Parser.tokens.actual.type == "CLOSE_PAR":
+                                Parser.tokens.selectNext()
                                 nodeBlock = Parser.parseBlock()
+                                NodeFuncDec.children.append(nodeBlock)
 
                             else:
                                 raise Exception("FALTOU PONTO E VIRGULA OU IGUAL")
@@ -304,7 +306,7 @@ class Parser:
         Node = Block("", [])
         if Parser.tokens.actual.type == "OPEN_BRACK":
             Parser.tokens.selectNext()
-            while Parser.tokens.actual.type not in ["CLOSE_BRACK", "RETURN"]:
+            while Parser.tokens.actual.type != "CLOSE_BRACK":
                 Node.children.append(Parser.parseStatement())
             Parser.tokens.selectNext()
         else:
@@ -337,6 +339,7 @@ class Parser:
                     else:
                         raise Exception("FALTOU PONTO E VIRGULA NA CRIACAO") 
                 else:
+                    # print("Oi")
                     Node = Parser.parseRealExpression()
                     arguments.append(Node)
                     while Parser.tokens.actual.type == "COMMA":
@@ -396,18 +399,19 @@ class Parser:
                 raise Exception("ABRE PARENTESES DO PRINT")
 
         elif Parser.tokens.actual.type == "RETURN":
-            Node = Return("", [])
+            Node = Return(Parser.tokens.actual.value, [])
             Parser.tokens.selectNext()
             # print("210", Parser.tokens.actual.value)
             if Parser.tokens.actual.type == "OPEN_PAR":
                 Parser.tokens.selectNext()
-                Node.children.append(Parser.parseStatement())
+                Node.children.append(Parser.parseRealExpression())
                 # print("276", Parser.tokens.actual.value)
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
                     if Parser.tokens.actual.type == "SEMI_COLON":
                         # print("SEMI COLON")
                         Parser.tokens.selectNext()
+                        # print(Parser.tokens.actual.value)
                         return Node
                     else:
                         raise Exception("PONTO E VIRGULA DO RETURN")
@@ -555,7 +559,7 @@ class Parser:
         if Parser.tokens.actual.type == "INT":
             # print("INT")
             # resultado = Parser.tokens.actual.value
-            # print("tipo: ", type(Parser.tokens.actual.value))
+            # print("tipo: ", Parser.tokens.actual.value)
             Node = IntVal(Parser.tokens.actual.value, None)
             Parser.tokens.selectNext()
             # print("AFTER INT", Parser.tokens.actual.value)
@@ -572,8 +576,10 @@ class Parser:
             # resultado = Parser.parseFactor()
             value = Parser.tokens.actual.value
             arguments = []
-            # Parser.tokens.selectNext()
+            # print("FACTOR", Parser.tokens.actual.value)
+            Parser.tokens.selectNext()
             if Parser.tokens.actual.type == "OPEN_PAR":
+                # print("FACTOR", Parser.tokens.actual.value)
                 Parser.tokens.selectNext()
                 if Parser.tokens.actual.type == "CLOSE_PAR":
                     Parser.tokens.selectNext()
@@ -590,8 +596,8 @@ class Parser:
                     else:
                         raise Exception("FALTOU FECHA PARENTESES")
             else:
-                Node = Identifier(Parser.tokens.actual.value, [])
-                Parser.tokens.selectNext()
+                Node = Identifier(value, [])
+                # Parser.tokens.selectNext()
             # print("AFTER IDENT", Parser.tokens.actual.value)
 
         elif Parser.tokens.actual.type == "PLUS":
@@ -702,6 +708,8 @@ class Assignment(Node):
 class Block(Node):
     def Evaluate(self, st):
         for child in self.children:
+            if child.value == "return":
+                return child.Evaluate(st)
             child.Evaluate(st)
 
 
@@ -743,8 +751,8 @@ class Identifier(Node):
 class VarDec(Node):
 
     def Evaluate(self, st):
-        # print("oi")
         for child in self.children:
+            # print("VArDEc", child.value)
             st.Create(child.value, self.value)
 
 
@@ -795,7 +803,6 @@ class UnOp(Node):
 class IntVal(Node):
 
     def Evaluate(self, st):
-        # print(self.value)
         # print(type(self.value))
         return (self.value, 'INT')
 
@@ -815,6 +822,7 @@ class NoOp(Node):
 class FuncDec(Node):
 
     def Evaluate(self, st):
+        # print("FuncDec" ,self.children[0].value)
         FuncTable.Create(self.children[0].value, self)
         
 class FuncCall(Node):
@@ -824,20 +832,29 @@ class FuncCall(Node):
 
         tipo, declaration = FuncTable.Getter(self.value)
         values = []
+            
 
-        for child in range(1, len(self.children)-1):
+        for child in range(1, len(self.children)+1):
             declaration.children[child].Evaluate(table)
-            val = declaration.children[child].children[0].value
+            val = declaration.children[child].children[0]
             values.append(val)
 
-        for child in range(0, len(self.children)-1):
-            arg = child.Evaluate(st)
-            table.Setter(values[child], arg)
+        contador = 1
+        for val in values:
+            
+            print(self.children[contador-1].value)
+            # print("DEC", val)
+            # arg = val.Evaluate(st) 
+            # table.Create(val.value, declaration.children[contador].value)
+            # print(values[val])
+            table.Setter(val, self.children[contador-1].Evaluate(st))
+            contador+=1
 
         return declaration.children[-1].Evaluate(table)
 class Return(Node):
 
     def Evaluate(self, st):
+        # print("oi")
         return self.children[0].Evaluate(st)
 
 
@@ -860,6 +877,7 @@ class FuncTable:
             raise Exception("FUNCAO NAO DEFINIDA")
 
     def Setter(chave, valor):
+        print("batata")
         if chave.value in FuncTable.funcTable:
             if valor[1] == FuncTable.funcTable[chave.value][1]:
                 FuncTable.funcTable[chave.value] = valor
@@ -874,7 +892,7 @@ class SymbolTable:
     def Create(self, chave, tipo):
         # print("table: ", chave)
         if chave in self.table:
-            raise Exception("VARIAVEL DEFINIDA DUAS VEZES")
+            raise Exception("VARIAVEL DEFINIDA DUAS VEZES ST")
         else:
             self.table[chave] = (None, tipo)
             # print(self.table)
@@ -890,8 +908,9 @@ class SymbolTable:
         if chave.value in self.table:
             if valor[1] == self.table[chave.value][1]:
                 self.table[chave.value] = valor
+                # print(self.table)
         else:
-            raise Exception("VARIAVEL NAO DEFINIDA")
+            raise Exception("SETTTER NAO DEFINIDA")
 
 
 arg = sys.argv[1]
