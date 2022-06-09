@@ -842,7 +842,7 @@ class FuncCall(Node):
         contador = 1
         for val in values:
             
-            print(self.children[contador-1].value)
+            # print(self.children[contador-1].value)
             # print("DEC", val)
             # arg = val.Evaluate(st) 
             # table.Create(val.value, declaration.children[contador].value)
