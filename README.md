@@ -6,8 +6,7 @@
 
 V2.4:
 
-BLOCK = "{", { STATEMENT }, "}" ;
-
+BLOCK = "{", { STATEMENT }, "}" ;   
 STATEMENT = ( λ | ASSIGNMENT | PRINT), ";" ;
 
 ASSIGNMENT = IDENTIFIER, "=", EXPRESSION ;
